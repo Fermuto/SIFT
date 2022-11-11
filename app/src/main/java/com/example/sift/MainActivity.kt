@@ -1,49 +1,34 @@
 package com.example.sift
 
 import android.Manifest
-import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
+import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.provider.MediaStore
+import android.util.Log
+import android.util.Size
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.ImageCapture
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.sift.databinding.ActivityMainBinding
+import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import android.widget.Toast
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.Preview
-import androidx.camera.core.CameraSelector
-import android.util.Log
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.video.FallbackStrategy
-import androidx.camera.video.MediaStoreOutputOptions
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.VideoRecordEvent
-import androidx.core.content.PermissionChecker
-import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.Locale
+
+
+@OptIn(androidx.camera.core.ExperimentalGetImage::class)
 
 typealias LumaListener = (luma: Double) -> Unit
-
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
 
     private var imageCapture: ImageCapture? = null
-
-    private var videoCapture: VideoCapture<Recorder>? = null
-    private var recording: Recording? = null
 
     private lateinit var cameraExecutor: ExecutorService
 
@@ -51,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+
+        viewBinding.processingPrompt.visibility = View.GONE
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -62,52 +49,66 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
-
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+
+    fun getTargetResolution(): Size {
+        return when (resources.configuration.orientation) {
+            Configuration.ORIENTATION_PORTRAIT -> Size(1200, 1600)
+            Configuration.ORIENTATION_LANDSCAPE -> Size(1600, 1200)
+            else -> Size(1600, 1200)
+        }
+    }
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
+
         val imageCapture = imageCapture ?: return
-
-        // Create time stamped name and MediaStore entry.
-        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
-            }
-        }
-
-        // Create output options object which contains file + metadata
-        val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues)
-            .build()
 
         // Set up image capture listener, which is triggered after photo has
         // been taken
-
         imageCapture.takePicture(
-            outputOptions,
             ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback {
+            object : ImageCapture.OnImageCapturedCallback() {
                 override fun onError(exc: ImageCaptureException) {
+                    val msg = "Photo capture failed"
+                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
-                override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults){
-                    val msg = "Photo capture succeeded: ${output.savedUri}"
+                override fun onCaptureSuccess(capture: ImageProxy){
+                    val msg = "Photo capture succeeded:"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
+                    viewBinding.processingPrompt.visibility = View.VISIBLE
+                    viewBinding.processingPrompt.setOnClickListener {
+                        val i = Intent(this@MainActivity, Processing::class.java)
+                        i.putExtra("Planes", capture.image!!.planes[0].buffer.toString())
+                        var j = 0
+                        while (j < 500) {
+                            Log.e(
+                                "BUFFERCONTENTS: ",
+                                capture.image!!.planes[0].buffer[301].toString()
+                            )
+                            j++
+                        }
+                        Log.e("BUFFERTYPE: ", capture.image!!.planes[0].buffer[0].javaClass.kotlin.qualifiedName.toString())
+                        Log.e("PIXELSTRIDE: ", capture.image!!.planes[0].pixelStride.toString())
+                        i.putExtra("Height", capture.height)
+                        i.putExtra("Width", capture.width)
+
+                        var buffer: ByteBuffer = capture.planes.get(0).buffer
+                        val bytes = ByteArray(buffer.capacity())
+                        buffer.get(bytes)
+                        val bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
+
+                        startActivity(i)
+                    }
                 }
             }
         )
     }
+
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -122,6 +123,10 @@ class MainActivity : AppCompatActivity() {
                 .also {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
+            val resolution = getTargetResolution()
+            imageCapture = ImageCapture.Builder()
+                .setTargetResolution((resolution))
+                .build()
 
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -132,7 +137,8 @@ class MainActivity : AppCompatActivity() {
 
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview)
+                    this, cameraSelector, preview, imageCapture)
+
 
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -140,6 +146,7 @@ class MainActivity : AppCompatActivity() {
 
         }, ContextCompat.getMainExecutor(this))
     }
+
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
@@ -151,21 +158,10 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
-    companion object {
-        private const val TAG = "CameraXApp"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private const val REQUEST_CODE_PERMISSIONS = 10
-        private val REQUIRED_PERMISSIONS =
-            mutableListOf (
-                Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ).toTypedArray()
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults:
         IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()
@@ -178,4 +174,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    companion object {
+        private const val TAG = "CameraXApp"
+        private const val REQUEST_CODE_PERMISSIONS = 10
+        private val REQUIRED_PERMISSIONS =
+            mutableListOf (
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ).toTypedArray()
+    }
 }
