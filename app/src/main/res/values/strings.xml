@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SIFT</string>
+    <string name="app_name">Final Project Unstable</string>
     <string name="take_photo">Take Photo</string>
     <string name="import_image">Import Image</string>
     <string name="processing_prompt">Start Processing Image?</string>

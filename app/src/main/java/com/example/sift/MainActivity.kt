@@ -3,8 +3,9 @@ package com.example.sift
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.util.Size
@@ -16,6 +17,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.sift.databinding.ActivityMainBinding
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -23,9 +26,10 @@ import java.util.concurrent.Executors
 
 @OptIn(androidx.camera.core.ExperimentalGetImage::class)
 
-typealias LumaListener = (luma: Double) -> Unit
 
 class MainActivity : AppCompatActivity() {
+
+    private val MODE_PRIVATE: Int = 0
     private lateinit var viewBinding: ActivityMainBinding
 
     private var imageCapture: ImageCapture? = null
@@ -52,13 +56,21 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
-
-    fun getTargetResolution(): Size {
-        return when (resources.configuration.orientation) {
-            Configuration.ORIENTATION_PORTRAIT -> Size(1200, 1600)
-            Configuration.ORIENTATION_LANDSCAPE -> Size(1600, 1200)
-            else -> Size(1600, 1200)
+    fun createImageFromBitmap(bitmap: Bitmap): String? {
+        var fileName: String? = "myImage" //no .png or .jpg needed
+        try {
+            val bytes = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
+            val fo: FileOutputStream = openFileOutput(fileName, this@MainActivity.MODE_PRIVATE)
+            fo.write(bytes.toByteArray())
+            // remember close file output
+            fo.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            fileName = null
         }
+        Log.e("FILENAME ", fileName.toString())
+        return fileName
     }
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
@@ -83,24 +95,63 @@ class MainActivity : AppCompatActivity() {
                     viewBinding.processingPrompt.visibility = View.VISIBLE
                     viewBinding.processingPrompt.setOnClickListener {
                         val i = Intent(this@MainActivity, Processing::class.java)
-                        i.putExtra("Planes", capture.image!!.planes[0].buffer.toString())
-                        var j = 0
-                        while (j < 500) {
-                            Log.e(
-                                "BUFFERCONTENTS: ",
-                                capture.image!!.planes[0].buffer[301].toString()
-                            )
-                            j++
-                        }
-                        Log.e("BUFFERTYPE: ", capture.image!!.planes[0].buffer[0].javaClass.kotlin.qualifiedName.toString())
-                        Log.e("PIXELSTRIDE: ", capture.image!!.planes[0].pixelStride.toString())
-                        i.putExtra("Height", capture.height)
-                        i.putExtra("Width", capture.width)
+
+//                        var j = 0
+//                        while (j < 500) {
+//                            Log.e(
+//                                "BUFFERCONTENTS: ",
+//                                capture.image!!.planes[0].buffer[j].toString()
+//                            )
+//                            j++
+//                        }
+//                        Log.e("BUFFERNUM: ", capture.image!!.planes[0].buffer[0].javaClass.kotlin.qualifiedName.toString())
+//                        Log.e("PLANES: ", capture.image!!.planes.size.toString())
+//                        Log.e("FORMAT: ", capture.image!!.format.toString())
+
 
                         var buffer: ByteBuffer = capture.planes.get(0).buffer
                         val bytes = ByteArray(buffer.capacity())
                         buffer.get(bytes)
-                        val bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
+                        val bitmapMid = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
+                        val bitmapImage = Bitmap.createScaledBitmap(bitmapMid, 640, 480, true)
+
+//                        val stream = ByteArrayOutputStream()
+//                        bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, stream)
+//                        val byteArray = stream.toByteArray()
+
+                        val bitmapname = createImageFromBitmap(bitmapImage)
+
+                        i.putExtra("Capture", bitmapname);
+                        i.putExtra("Height", bitmapImage.height)
+                        i.putExtra("Width", bitmapImage.width)
+
+//                        var j = 0
+//                        var k = 0
+//                        while (j < 10) {
+//                            while (k < 10){
+//                                Log.e(
+//                                    "CONTENTS: ",
+//                                    bitmapImage.getPixel(j, k).toString()
+//                                )
+//                                k++
+//                            }
+//                            j++
+//                        }
+//                        var colour = bitmapImage.getPixel(392, 404)
+//
+//                        Log.e("DATATYPE: ", colour::class.java.typeName.toString())
+//
+//                        Log.e("RED: ", Color.red(colour).toString())
+//                        Log.e("GRN: ", Color.green(colour).toString())
+//                        Log.e("BLU: ", Color.blue(colour).toString())
+//                        Log.e("ALPHA: ", Color.alpha(colour).toString())
+//
+//                        Log.e("FORMAT: ", bitmapImage.getPixel(0,0).toString())
+//                        Log.e("New Height: ", bitmapImage.height.toString())
+//                        Log.e("New Width: ", bitmapImage.width.toString())
+//                        Log.e("New Width: ", bitmapImage.width.toString())
+
+                        capture.close()
 
                         startActivity(i)
                     }
@@ -123,9 +174,9 @@ class MainActivity : AppCompatActivity() {
                 .also {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
-            val resolution = getTargetResolution()
+//            val resolution = getTargetResolution()
             imageCapture = ImageCapture.Builder()
-                .setTargetResolution((resolution))
+                .setTargetResolution(Size(1600, 1200))
                 .build()
 
             // Select back camera as a default
