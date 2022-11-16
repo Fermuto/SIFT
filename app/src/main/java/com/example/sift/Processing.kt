@@ -323,16 +323,11 @@ class Processing : AppCompatActivity() {
                 val start_pnt_y = j - (w_l / 2)
                 for (k in 0 until w_k){
                     for (l in 0 until w_l){
-                        if ((((start_pnt_x + w_k )< 0) or ((start_pnt_y + w_l) < 0)) or (((start_pnt_x + w_k) > fun_width) or ((start_pnt_y + w_l) > fun_length))){
+                        if ((((start_pnt_x + k )< 0) or ((start_pnt_y + l) < 0)) or (((start_pnt_x + k) > fun_width) or ((start_pnt_y + l) > fun_length))){
                             pic_conv[i][j] += 0
                         }
                         else{
-                            if ((start_pnt_x + k < 0) or (start_pnt_y + l < 0)){
-                                pic_conv[i][j] = 0
-                            }
-                            else{
-                                pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
-                            }
+                            pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
 
                         }
                     }
