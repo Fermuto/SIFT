@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
 import android.service.autofill.Validators.not
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.collections.*
 import kotlin.math.*
@@ -170,10 +171,9 @@ class Processing : AppCompatActivity() {
         for (y in 0 until thresholded.size){
             for (x in 0 until thresholded[0].size){
                 if ((x - 1 >= 0) && (x + 1 < thresholded[0].size) && (y - 1 >= 0 ) && (y + 1 < thresholded.size)){
-                    var sub_img: Array<Array<Int>> = arrayOf(arrayOf(thresholded[y-1][x-1],thresholded[y-1][x],thresholded[y-1][x+1],thresholded[y-1][x+2]),
-                        arrayOf(thresholded[y][x-1],thresholded[y][x],thresholded[y][x+1],thresholded[y][x+2]),
-                        arrayOf(thresholded[y+1][x-1],thresholded[y+1][x],thresholded[y+1][x+1],thresholded[y+1][x+2]),
-                        arrayOf(thresholded[y+2][x-1],thresholded[y+2][x],thresholded[y+2][x+1],thresholded[y+2][x+2]))
+                    var sub_img: Array<Array<Int>> = arrayOf(arrayOf(thresholded[y-1][x-1],thresholded[y-1][x],thresholded[y-1][x+1]),
+                        arrayOf(thresholded[y][x-1],thresholded[y][x],thresholded[y][x+1]),
+                        arrayOf(thresholded[y+1][x-1],thresholded[y+1][x],thresholded[y+1][x+1]))
                     if (thresholded[y][x] == 100){
                         if ((sub_img[0][0] == 255) or (sub_img[0][1] == 255) or (sub_img[0][2] == 255)
                             or (sub_img[1][0] == 255) or (sub_img[1][1] == 255) or (sub_img[1][2] == 255)
@@ -190,6 +190,18 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
+                        var j_1 = 0
+                        var k_1 = 0
+                        while (j_1 < 100) {
+                            while (k_1 < 100){
+                                Log.e(
+                                    "WOIFEJ: ",
+                                    vals[j_1][k_1].toString()
+                                )
+                                k_1++
+                            }
+                            j_1++
+                        }
 
 
         /********************************************************************************************/
@@ -315,7 +327,13 @@ class Processing : AppCompatActivity() {
                             pic_conv[i][j] += 0
                         }
                         else{
-                            pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
+                            if ((start_pnt_x + k < 0) or (start_pnt_y + l < 0)){
+                                pic_conv[i][j] = 0
+                            }
+                            else{
+                                pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
+                            }
+
                         }
                     }
                 }
