@@ -174,7 +174,7 @@ class Processing : AppCompatActivity() {
             }
         }
 
-        val strong_thres = 0.35 * find_max
+        val strong_thres = 0.30 * find_max
         val weak_thres = 0.15 * find_max
         var thresholded: Array<Array<Int>> = Array(new_vals.size) {Array(new_vals[0].size) {0} }
 
@@ -215,9 +215,9 @@ class Processing : AppCompatActivity() {
         }
 
         val display = createBitmap(dst.size, dst[0].size, Config.ARGB_8888)
-        for (y in 0 until dst.size){
-            for (x in 0 until dst[0].size){
-                display.setPixel(y, x, Color.argb(255, dst[y][x], dst[y][x], dst[y][x]))
+        for (x in 0 until dst.size){
+            for (y in 0 until dst[0].size){
+                display.setPixel(((dst.size - 1) - x), y, Color.argb(255, dst[x][y], dst[x][y], dst[x][y]))
             }
         }
 
@@ -331,7 +331,7 @@ class Processing : AppCompatActivity() {
         }
         for (j in 0 until (Height - 1)){
             for (k in 0 until (Width - 1)){
-                gray_color[j][k] = ((0.2126 * reds[j][k]) + (0.7152 * greens[j][k]) + (0.0722 * blues[j][k])).toInt()
+                gray_color[j][k] = ((0.3 * reds[j][k]) + (0.59 * greens[j][k]) + (0.11 * blues[j][k])).toInt()
             }
         }
         return gray_color
