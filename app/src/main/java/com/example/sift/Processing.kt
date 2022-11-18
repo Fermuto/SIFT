@@ -1,38 +1,61 @@
 package com.example.sift
 
-import android.graphics.Bitmap
+import android.graphics.*
 import android.graphics.Bitmap.*
-import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.os.Bundle
-import android.service.autofill.Validators.not
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.example.sift.databinding.ActivityProcessingBinding
 import kotlin.collections.*
 import kotlin.math.*
 
+
 class Processing : AppCompatActivity() {
     var conf = Config.ARGB_8888
-    var bitmap: Bitmap = createBitmap(640, 480, conf)
-
     var Width: Int = 0
     var Height: Int = 0
 
+    private lateinit var viewBinding: ActivityProcessingBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_processing)
+        viewBinding = ActivityProcessingBinding.inflate(layoutInflater)
+        setContentView(viewBinding.root)
+//        setContentView(R.layout.activity_processing)
 
         val extras = intent.extras
-
-        bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
         Height = extras!!.getInt("Height")
         Width = extras!!.getInt("Width")
+
+        var bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
+
 
         /********************************************************************************************/
         // CANNY EDGE DETECTOR START
         /********************************************************************************************/
 
         var greyscale = RGBtoGreyscale(bitmap)
+        Log.e("bitmap height :", bitmap.height.toString())
+        Log.e("bitmap width :", bitmap.width.toString())
+
+//        for (j in 0 until 640){
+//            for (k in 0 until 480){
+//                var colour = bitmap.getPixel(j, k)
+//                Log.e("j: ", j.toString())
+//                Log.e("k: ", k.toString())
+//                Log.e("RED: ", Color.red(colour).toString())
+//                Log.e("GRN: ", Color.green(colour).toString())
+//                Log.e("BLU: ", Color.blue(colour).toString())
+//                Log.e("ALPHA: ", Color.alpha(colour).toString())
+//            }
+//        }
+//         for (j in 0 until 640) {
+//            for (k in 0 until 480){
+//                Log.e("Greyscale :", greyscale[j][k].toString())
+//                k++
+//            }
+//            j++
+//        }
 
         var kernel = gengaussian_kernel(5, 2)
         var conv = conv2(greyscale, kernel)
@@ -190,19 +213,15 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-                        var j_1 = 0
-                        var k_1 = 0
-                        while (j_1 < 100) {
-                            while (k_1 < 100){
-                                Log.e(
-                                    "WOIFEJ: ",
-                                    vals[j_1][k_1].toString()
-                                )
-                                k_1++
-                            }
-                            j_1++
-                        }
 
+        val display = createBitmap(dst.size, dst[0].size, Config.ARGB_8888)
+        for (y in 0 until dst.size){
+            for (x in 0 until dst[0].size){
+                display.setPixel(y, x, Color.argb(255, dst[y][x], dst[y][x], dst[y][x]))
+            }
+        }
+
+        viewBinding.productDisplay.setImageBitmap(display)
 
         /********************************************************************************************/
         // CANNY EDGE DETECTOR END
@@ -241,34 +260,66 @@ class Processing : AppCompatActivity() {
         return bilin_interpol
     }
 
-    fun sRGBtoLinear(x_in: Double): Double {
-        if (x_in < 0.04045){
-            return x_in / 12.92
-        }
-        return ((x_in + 0.055) / 1.055).pow(2.4)
-    }
+//    fun sRGBtoLinear(x_in: Double): Double {
+//        if (x_in < 0.04045){
+//            return x_in / 12.92
+//        }
+//        return ((x_in + 0.055) / 1.055).pow(2.4)
+//    }
+//
+//    fun LineartosRGB(y_in: Double): Double {
+//        if (y_in <= 0.0031308){
+//            return 12.92 * y_in
+//        }
+//        return (1.055 * y_in.pow(1/2.4)) - 0.055
+//    }
 
-    fun LineartosRGB(y_in: Double): Double {
-        if (y_in <= 0.0031308){
-            return 12.92 * y_in
-        }
-        return (1.055 * y_in.pow(1/2.4)) - 0.055
-    }
-
-    fun RGBtoGreyscale(Image: Bitmap): Array<Array<Int>> { // row and col REVERSED compared to python which is itself REVERSED
-
+//    fun RGBtoGreyscale(Image: Bitmap): Array<Array<Int>> { // row and col REVERSED compared to python which is itself REVERSED
+//
+//        var reds: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
+//        var greens: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
+//        var blues: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
+//
+//        var reds_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
+//        var greens_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
+//        var blues_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
+//
+//        var gray_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
+//
+//        var gray_color: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
+//
+//        var colour: Int = 0
+//        for (r in 0 until Height - 1){
+//            for (c in 0 until Width - 1){
+//                colour = Image.getPixel(c, r)
+//                reds[r][c] = Color.red(colour)
+//                greens[r][c] = Color.green(colour)
+//                blues[r][c] = Color.blue(colour)
+//            }
+//        }
+//
+//        for (j in 0 until (Height - 1)){
+//            for (k in 0 until (Width - 1)){
+//                reds_linear[j][k] = sRGBtoLinear(reds[j][k] / 255.0)
+//                greens_linear[j][k] = sRGBtoLinear(greens[j][k] / 255.0)
+//                blues_linear[j][k] = sRGBtoLinear(blues[j][k] / 255.0)
+//                if (j < 100){
+//                    if (k < 100){
+//                        Log.e("REDS_LINEAR")
+//                    }
+//                }
+//
+//                gray_linear[j][k] = (0.2126 * reds_linear[j][k]) + (0.7152 * greens_linear[j][k]) + (0.0722 * blues_linear[j][k])
+//                gray_color[j][k] = (LineartosRGB(gray_linear[j][k] * 255.0)).toInt()
+//            }
+//        }
+//        return gray_color
+//    }
+    fun RGBtoGreyscale(Image: Bitmap): Array<Array<Int>> {
         var reds: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
         var greens: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
         var blues: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
-
-        var reds_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
-        var greens_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
-        var blues_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
-
-        var gray_linear: Array<Array<Double>> = Array(Height) {Array(Width) {0.0} }
-
         var gray_color: Array<Array<Int>> = Array(Height) {Array(Width) {0} }
-
         var colour: Int = 0
         for (r in 0 until Height - 1){
             for (c in 0 until Width - 1){
@@ -278,63 +329,92 @@ class Processing : AppCompatActivity() {
                 blues[r][c] = Color.blue(colour)
             }
         }
-
-        for (j in 0 until (Width - 1)){
-            for (k in 0 until (Height - 1)){
-                reds_linear[k][j] = sRGBtoLinear(reds[k][j] / 255.0)
-                greens_linear[k][j] = sRGBtoLinear(greens[k][j] / 255.0)
-                blues_linear[k][j] = sRGBtoLinear(blues[k][j] / 255.0)
-
-                gray_linear[k][j] = (0.2126 * reds_linear[k][j]) + (0.7152 * greens_linear[k][j]) + (0.0722 * blues_linear[k][j])
-                gray_color[k][j] = (LineartosRGB(gray_linear[k][j] * 255.0)).toInt()
+        for (j in 0 until (Height - 1)){
+            for (k in 0 until (Width - 1)){
+                gray_color[j][k] = ((0.2126 * reds[j][k]) + (0.7152 * greens[j][k]) + (0.0722 * blues[j][k])).toInt()
             }
         }
         return gray_color
     }
 
-    fun revkernel(kernel: Array<Array<Int>>): Array<Array<Int>>{
-        var new_kernel: Array<Array<Int>> = kernel
-        var fun_width = kernel[0].size
+//    fun revkernel(kernel: Array<Array<Int>>): Array<Array<Int>>{
+//        var new_kernel: Array<Array<Int>> = kernel
+//        var fun_width = kernel[0].size
+//
+//        for (i in 0 until fun_width) {
+//            for (j in 0 until fun_width) {
+//                new_kernel[i][fun_width - 1 - j] = kernel[i][j]
+//            }
+//        }
+//        var temp = new_kernel
+//        for (i in 0 until fun_width) {
+//            for (j in 0 until fun_width) {
+//                new_kernel[fun_width - 1 - i][j] = temp[i][j]
+//            }
+//        }
+//        return new_kernel
+//    }
 
-        for (i in 0 until fun_width) {
-            for (j in 0 until fun_width) {
-                new_kernel[i][fun_width - 1 - j] = kernel[i][j]
-            }
+//    fun conv2(pic: Array<Array<Int>>, kernel: Array<Array<Int>>): Array<Array<Int>> { // reversal from python kept because it's too much of a headache to change
+//        var pic_conv: Array<Array<Int>> = Array(pic.size) {Array(pic[0].size) {0} }
+//        var kernel_rev = revkernel(kernel)
+//        val fun_width = pic.size
+//        val fun_length = pic[0].size
+//        val w_k = kernel_rev.size
+//        val w_l = kernel_rev[0].size
+//        for (i in 0 until fun_width){
+//            for (j in 0 until fun_length){
+//                val start_pnt_x = i - (w_k / 2)
+//                val start_pnt_y = j - (w_l / 2)
+//                for (k in 0 until w_k){
+//                    for (l in 0 until w_l){
+//                        if ((((start_pnt_x + k )< 0) or ((start_pnt_y + l) < 0)) or (((start_pnt_x + k) > fun_width) or ((start_pnt_y + l) > fun_length))){
+//                            pic_conv[i][j] += 0
+//                        }
+//                        else{
+//                            Log.e("PICCONV[I][J]", i.toString())
+//                            pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
+//
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return pic_conv
+    open fun conv2(data: Array<Array<Int>>, kernel: Array<Array<Int>>): Array<Array<Int>> {
+        // 0 is black and 255 is white.
+        val size = Height * Width
+        var convData = Array(Height) {Array(Width) {0} }
+
+        // Perform single channel 2D Convolution
+        // Note that you only need to manipulate data[0:size] that corresponds to luminance
+        // The rest data[size:data.length] is ignored since we only want grayscale output
+        // ** START YOUR CODE HERE  ** //
+//        var revkernel = arrayOfNulls<Int>(kernel.size)
+        val revkernel = Array(kernel.size) {Array(kernel[0].size) {0} }
+        for (i in kernel.indices) {
+            revkernel[kernel.size - 1 - i] = kernel[i]
         }
-        var temp = new_kernel
-        for (i in 0 until fun_width) {
-            for (j in 0 until fun_width) {
-                new_kernel[fun_width - 1 - i][j] = temp[i][j]
-            }
-        }
-        return new_kernel
-    }
-
-    fun conv2(pic: Array<Array<Int>>, kernel: Array<Array<Int>>): Array<Array<Int>> { // reversal from python kept because it's too much of a headache to change
-        var pic_conv: Array<Array<Int>> = Array(pic.size) {Array(pic[0].size) {0} }
-        var kernel_rev = revkernel(kernel)
-        val fun_width = pic.size
-        val fun_length = pic[0].size
-        val w_k = kernel_rev.size
-        val w_l = kernel_rev[0].size
-        for (i in 0 until fun_width){
-            for (j in 0 until fun_length){
-                val start_pnt_x = i - (w_k / 2)
-                val start_pnt_y = j - (w_l / 2)
-                for (k in 0 until w_k){
-                    for (l in 0 until w_l){
-                        if ((((start_pnt_x + k )< 0) or ((start_pnt_y + l) < 0)) or (((start_pnt_x + k) > fun_width) or ((start_pnt_y + l) > fun_length))){
-                            pic_conv[i][j] += 0
-                        }
-                        else{
-                            pic_conv[i][j] += pic[start_pnt_x + k][start_pnt_y + l] * kernel_rev[k][l]
-
+        val w_k: Int = kernel[0].size
+        val h_k: Int = kernel[0].size
+        var start_pnt_x = 0
+        var start_pnt_y = 0
+        for (i in 0 until Height) {
+            for (j in 0 until Width) {
+                start_pnt_x = j - (w_k / 2)
+                start_pnt_y = i - (h_k / 2)
+                for (k in 0 until h_k) {
+                    for (l in 0 until w_k) {
+                        if (start_pnt_x + l < 0 || start_pnt_y + k < 0 || start_pnt_y + k >= Height || start_pnt_x + l >= Width || i * Width + j >= 307200) {
+                            convData[0][0] += 0
+                        } else {
+                            convData[i][j] += ((data[start_pnt_y + k][start_pnt_x + l]) * (revkernel[k][l])).toInt()
                         }
                     }
                 }
             }
         }
-        return pic_conv
+        return convData
     }
 
     //    fun dilate3D(img: Bitmap, x: Int, y: Int): {
