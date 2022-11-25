@@ -82,5 +82,9 @@ dependencies {
     implementation "androidx.camera:camera-view:${camerax_version}"
     implementation "androidx.camera:camera-extensions:${camerax_version}"
 
+    def multik_version = "0.2.1"
+    implementation "org.jetbrains.kotlinx:multik-core:${multik_version}"
+    implementation "org.jetbrains.kotlinx:multik-default:${multik_version}"
+
 
 }
