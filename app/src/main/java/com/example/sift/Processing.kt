@@ -11,6 +11,7 @@ import org.jetbrains.kotlinx.multik.api.zeros
 import org.jetbrains.kotlinx.multik.default.math.*
 import org.jetbrains.kotlinx.multik.default.math.DefaultMath.argMin
 import org.jetbrains.kotlinx.multik.ndarray.data.set
+import java.util.*
 import kotlin.collections.*
 import kotlin.math.*
 
@@ -41,8 +42,8 @@ class Processing : AppCompatActivity() {
         /********************************************************************************************/
 
         var greyscale = RGBtoGreyscale(bitmap)
-        Log.e("bitmap height :", bitmap.height.toString())
-        Log.e("bitmap width :", bitmap.width.toString())
+        Log.e("[INFO]", "Bitmap Height:"+bitmap.height.toString())
+        Log.e("[INFO]", "Bitmap Width:"+bitmap.width.toString())
 
 //        for (j in 0 until 640){
 //            for (k in 0 until 480){
@@ -64,14 +65,18 @@ class Processing : AppCompatActivity() {
 //        }
 
         var kernel = gengaussian_kernel(5, 2)
+        Log.e("[STATUS]", "Starting blurring convolution")
         var conv = conv2(greyscale, kernel)
+        Log.e("[STATUS]", "Ending blurring convolution")
         var sobel_x: Array<Array<Int>> = arrayOf(arrayOf(1, 0, -1), arrayOf(2, 0, -2), arrayOf(1, 0, -1))
         var sobel_y: Array<Array<Int>> = arrayOf(arrayOf(1, 2, 1), arrayOf(0, 0, 0), arrayOf(-1, -2, -1))
+        Log.e("[STATUS]", "Starting gradient convolution")
         var grad_x = conv2(conv, sobel_x)
         var grad_y = conv2(conv, sobel_y)
-
+        Log.e("[STATUS]", "Ending gradient convolution")
         var vals: Array<Array<Array<Double>>> = Array(grad_x.size, { Array(grad_x[0].size, { Array(3, {0.0}) } ) } )
 
+        Log.e("[STATUS]", "Starting gradient and magnitude calculation")
         for (y in 0 until greyscale.size){
             for (x in 0 until greyscale[0].size){
                 vals[y][x][0] = sqrt(grad_x[y][x].toDouble().pow(2) + grad_y[y][x].toDouble().pow(2))
@@ -85,10 +90,11 @@ class Processing : AppCompatActivity() {
             }
 
         }
-
+        Log.e("[STATUS]", "Ending gradient and magnitude calculation")
         var find_max = 0.0
         var x_max = 0
         var y_max = 0
+        Log.e("[STATUS]", "Starting find max")
         for (y in 0 until greyscale.size) {
             for (x in 0 until greyscale[0].size) {
                 if (vals[y][x][0] > find_max){
@@ -98,7 +104,8 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[STATUS]", "Ending find max")
+        Log.e("[STATUS]", "Starting bilinear interpolation for edge detection")
         var new_vals: Array<Array<Double>> = Array(vals.size) {Array(vals[0].size) {0.0} }
         for (y in 0 until vals.size) {
             for (x in 0 until vals[0].size) {
@@ -179,7 +186,8 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[STATUS]", "Ending bilinear interpolation for edge detection")
+        Log.e("[STATUS]", "Starting Thresholded Canny Edge Detection")
         val strong_thres = 0.30 * find_max
         val weak_thres = 0.15 * find_max
         var thresholded: Array<Array<Int>> = Array(new_vals.size) {Array(new_vals[0].size) {0} }
@@ -194,9 +202,10 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[STATUS]", "Ending Thresholded Canny Edge Detection")
         var dst: Array<Array<Int>> = Array(thresholded.size) {Array(thresholded[0].size) {0} }
-
+        var num_dst = 0
+        Log.e("[STATUS]", "Starting destination Canny Edge Detection")
         for (y in 0 until thresholded.size){
             for (x in 0 until thresholded[0].size){
                 if ((x - 1 >= 0) && (x + 1 < thresholded[0].size) && (y - 1 >= 0 ) && (y + 1 < thresholded.size)){
@@ -208,10 +217,12 @@ class Processing : AppCompatActivity() {
                             or (sub_img[1][0] == 255) or (sub_img[1][1] == 255) or (sub_img[1][2] == 255)
                             or (sub_img[2][0] == 255) or (sub_img[2][1] == 255) or (sub_img[2][2] == 255)){
                             dst[y][x] = 255
+                            num_dst = num_dst + 1
                         }
                     }
                     else if (thresholded[y][x] == 255){
                         dst[y][x] = 255
+                        num_dst = num_dst + 1
                     }
                     else{
                         dst[y][x] = 0
@@ -219,17 +230,20 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
+        Log.e("[INFO]", "Total number of non-zero values in destination: $num_dst")
+        Log.e("[STATUS]", "Ending destination Canny Edge Detection")
 
         /********************************************************************************************/
         // CANNY EDGE DETECTOR END
 
         // GRADIENT INFORMED HOUGH TRANSFORM START
         /********************************************************************************************/
-
+        Log.e("[STATUS]", "Starting gradient informed hough transfrom")
         var dst_grad: Array<Array<Double>> = Array(dst.size) {Array(dst[0].size) {0.0} }
-        val num_rhos = 900
-        val num_thetas = 1000
+        val num_rhos = 100
+        val num_thetas = 100
         val diag_len = ceil(sqrt(((Width * Width) + (Height * Height)).toDouble()))
+        Log.e("[INFO]", "Diagonal length of image is: $diag_len")
         val rho_granularity = (2 * diag_len) / num_rhos
         val theta_granularity = 180 / num_thetas
 
@@ -285,7 +299,10 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        for (i in 0 until num_rhos) {
+            Log.e("[INFO]", "accumulator_grad: " + Arrays.toString(accumulator_grad[i]))
+        }
+        Log.e("[STATUS]", "Ending gradient informed hough transform")
         /********************************************************************************************/
         // GRADIENT INFORMED HOUGH TRANSFORM END
 
@@ -294,6 +311,7 @@ class Processing : AppCompatActivity() {
 
         var num_lines = 0
         var threshold = 6
+        Log.e("[STATUS]", "Starting hough transform trimming")
         for (y in 0 until accumulator_grad.size){
             for (x in 0 until accumulator_grad[0].size){
                 if (accumulator_grad[y][x] < threshold){
@@ -304,7 +322,7 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[INFO]", "Number of lines detected post threshold is: $num_lines")
         var accumed = Array(accumulator_grad.size) { Array(accumulator_grad[0].size) {0} }
         if (num_lines > 50){
             var accumedm = dilate(accumulator_grad, 3, 3)
@@ -334,6 +352,22 @@ class Processing : AppCompatActivity() {
             accumed_suppressed = dilate(accumed, 3, 3)
         }
 
+        // DEBUG NUM LINES (REMOVE WHEN DONE)
+        num_lines = 0
+        for (y in 0 until accumulator_grad.size){
+            for (x in 0 until accumulator_grad[0].size){
+                if (accumed_suppressed[y][x] > 0){
+                    num_lines += 1
+                    accumed_suppressed[y][x] = 255
+                }
+                else{
+                    accumed_suppressed[y][x] = 0
+                }
+            }
+        }
+        Log.e("[INFO]", "Number of lines detected post trimming is: $num_lines")
+        Log.e("[STATUS]", "Ending hough transform trimming")
+        Log.e("[STATUS]", "Starting DBSCAN")
         var points = points(accumed_suppressed)
 
         var distance = Array(points.size) {Array(points.size) {0.0} }
@@ -419,9 +453,11 @@ class Processing : AppCompatActivity() {
             cluster_center[i][0] = (y / total).toInt()
             cluster_center[i][0] = (x / total).toInt()
         }
-
+        Log.e("[INFO]", "Number of clusters is: $num_clusters")
+        Log.e("[STATUS]", "Ending DBSCAN")
         /********************************************************************************************/
         // DRAW LINES V1
+        Log.e("[STATUS]", "Starting to draw lines")
         var workingBitmap: Bitmap? = createBitmap(bitmap)
         val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
@@ -580,9 +616,9 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[STATUS]", "Ending draw lines")
         /********************************************************************************************/
-
+        Log.e("[STATUS]", "Determining intercepts")
         var intercept: MutableList<Pair<Int, Int>> = mutableListOf()
         for (j in 0 until Height){
             for (i in 0 until Width){
@@ -601,7 +637,8 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
+        Log.e("[INFO]", "Intercepts at: $intercept")
+        Log.e("[STATUS]", "Drawing Circles")
         var paintcircle = Paint()
         paintcircle.strokeWidth = 2.0F
         val radius = 4.0F
