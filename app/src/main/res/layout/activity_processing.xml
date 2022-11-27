@@ -10,7 +10,7 @@
         android:id="@+id/productDisplay"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:rotation="-90"
+        android:rotation="-360"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.502"

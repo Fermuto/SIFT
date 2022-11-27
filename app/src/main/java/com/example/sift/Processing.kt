@@ -238,11 +238,11 @@ class Processing : AppCompatActivity() {
         rhos[0] = -diag_len
         thetas[0] = 0.0
 
-        for (i in 1..num_rhos){
+        for (i in 1 until num_rhos){
             rhos[i] = (-diag_len) + (i * rho_granularity)
         }
 
-        for (i in 1..num_thetas){
+        for (i in 1 until num_thetas){
             thetas[i] = (0.0) + (i * theta_granularity)
         }
 
@@ -422,8 +422,10 @@ class Processing : AppCompatActivity() {
 
         /********************************************************************************************/
         // DRAW LINES V1
+        var workingBitmap: Bitmap? = createBitmap(bitmap)
+        val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
-        var canvas = Canvas(bitmap)
+        var canvas = Canvas(mutableBitmap)
         var paintline = Paint()
         paintline.strokeWidth = 2.0F
 
@@ -568,10 +570,10 @@ class Processing : AppCompatActivity() {
                 }
                 if (drawing){
                     if (j < num_solo){
-                        bitmap.setPixel(x, y, Color.rgb(255, 0, 0));
+                        mutableBitmap.setPixel(x, y, Color.rgb(255, 0, 0));
                     }
                     if (j >= num_solo){
-                        bitmap.setPixel(x, y, Color.rgb(0, 255, 0));
+                        mutableBitmap.setPixel(x, y, Color.rgb(0, 255, 0));
                     }
                     points_ol[y][x][0] += 1.0
                     points_ol[y][x][j + 1] += theta
@@ -620,7 +622,7 @@ class Processing : AppCompatActivity() {
 //            }
 //        }
 
-        viewBinding.productDisplay.setImageBitmap(display)
+        viewBinding.productDisplay.setImageBitmap(mutableBitmap)
     }
 
     /********************************************************************************************/
