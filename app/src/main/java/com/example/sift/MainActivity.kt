@@ -83,13 +83,13 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onError(exc: ImageCaptureException) {
-                    val msg = "Photo capture failed"
+                    val msg = "Photo capture failed!"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
                 }
 
                 override fun onCaptureSuccess(capture: ImageProxy){
-                    val msg = "Photo capture succeeded:"
+                    val msg = "Photo capture succeeded!"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
                     viewBinding.processingPrompt.visibility = View.VISIBLE

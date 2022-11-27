@@ -466,38 +466,40 @@ class Processing : AppCompatActivity() {
         paintline.strokeWidth = 2.0F
 
         var num_solo = 0
-//        for (x in 0 until cluster_center.size){
-//            var rho = rhos[cluster_center[x][0]]
-//            var theta = thetas[cluster_center[x][1]]
-//            var a = cos(Math.toRadians(theta))
-//            var b = sin(Math.toRadians(theta))
-//            var x0 = (a * rho)
-//            var y0 = (b * rho)
-//            var x1 = (x0 + (diag_len * (-b))).toInt().toFloat()
-//            var y1 = (y0 + (diag_len * (a))).toInt().toFloat()
-//            var x2 = (x0 - (diag_len * (-b))).toInt().toFloat()
-//            var y2 = (y0 - (diag_len * (a))).toInt().toFloat()
-//            paintline.color = Color.RED
-//            canvas.drawLine(x1, y1, x2, y2, paintline)
-//        }
-//
-//        for (j in 0 until points.size){
-//            if (cluster[j][3] == -1){
-//                num_solo += 1
-//                var rho = rhos[cluster[j][0]]
-//                var theta = thetas[cluster[j][1]]
-//                var a = cos(Math.toRadians(theta))
-//                var b = sin(Math.toRadians(theta))
-//                var x0 = (a * rho)
-//                var y0 = (b * rho)
-//                var x1 = (x0 + (1000 * (-b))).toInt().toFloat()
-//                var y1 = (y0 + (1000 * (a))).toInt().toFloat()
-//                var x2 = (x0 - (1000 * (-b))).toInt().toFloat()
-//                var y2 = (y0 - (1000 * (a))).toInt().toFloat()
-//                paintline.color = Color.GREEN
-//                canvas.drawLine(x1, y1, x2, y2, paintline)
-//            }
-//        }
+        for (x in 0 until cluster_center.size){
+            var rho = rhos[cluster_center[x][0]]
+            var theta = thetas[cluster_center[x][1]]
+            var a = cos(Math.toRadians(theta))
+            var b = sin(Math.toRadians(theta))
+            var x0 = (a * rho)
+            var y0 = (b * rho)
+            var x1 = (x0 + (diag_len * (-b))).toInt().toFloat()
+            var y1 = (y0 + (diag_len * (a))).toInt().toFloat()
+            var x2 = (x0 - (diag_len * (-b))).toInt().toFloat()
+            var y2 = (y0 - (diag_len * (a))).toInt().toFloat()
+            paintline.color = Color.RED
+            canvas.drawLine(x1, y1, x2, y2, paintline)
+            Log.e("[INFO]", "M1 RED Line drawn at: ($x1, $y1) to ($x2, $y2)")
+        }
+
+        for (j in 0 until points.size){
+            if (cluster[j][3] == -1){
+                num_solo += 1
+                var rho = rhos[cluster[j][0]]
+                var theta = thetas[cluster[j][1]]
+                var a = cos(Math.toRadians(theta))
+                var b = sin(Math.toRadians(theta))
+                var x0 = (a * rho)
+                var y0 = (b * rho)
+                var x1 = (x0 + (1000 * (-b))).toInt().toFloat()
+                var y1 = (y0 + (1000 * (a))).toInt().toFloat()
+                var x2 = (x0 - (1000 * (-b))).toInt().toFloat()
+                var y2 = (y0 - (1000 * (a))).toInt().toFloat()
+                paintline.color = Color.GREEN
+                canvas.drawLine(x1, y1, x2, y2, paintline)
+                Log.e("[INFO]", "M1 GRN Line drawn at: ($x1, $y1) to ($x2, $y2)")
+            }
+        }
         /********************************************************************************************/
 
         var total_length = num_solo + cluster_center.size
@@ -607,9 +609,11 @@ class Processing : AppCompatActivity() {
                 if (drawing){
                     if (j < num_solo){
                         mutableBitmap.setPixel(x, y, Color.rgb(255, 0, 0));
+                        Log.e("[INFO]", "M2 RED pixel set at: ($x, $y)")
                     }
                     if (j >= num_solo){
                         mutableBitmap.setPixel(x, y, Color.rgb(0, 255, 0));
+                        Log.e("[INFO]", "M2 GRN pixel set at: ($x, $y)")
                     }
                     points_ol[y][x][0] += 1.0
                     points_ol[y][x][j + 1] += theta
@@ -646,6 +650,7 @@ class Processing : AppCompatActivity() {
             var y = intercept[i].first.toFloat()
             var x = intercept[i].second.toFloat()
             canvas.drawCircle(x, y, radius, paintcircle)
+            Log.e("[INFO]", "Circle set at: ($x, $y)")
         }
 
 
