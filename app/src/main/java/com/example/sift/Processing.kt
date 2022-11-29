@@ -244,9 +244,10 @@ class Processing : AppCompatActivity() {
         val num_thetas = 400
         val diag_len = ceil(sqrt(((Width * Width) + (Height * Height)).toDouble()))
         Log.e("[INFO]", "Diagonal length of image is: $diag_len")
-        val rho_granularity = (2 * diag_len) / num_rhos
-        val theta_granularity = 180 / num_thetas
-
+        val rho_granularity = (2.0F * diag_len) / num_rhos.toFloat()
+        val theta_granularity = 180.0F / num_thetas.toFloat()
+        Log.e("[INFO]", "Rho Granularity of image is: $rho_granularity")
+        Log.e("[INFO]", "Theta Granularity of image is: $theta_granularity")
         var rhos = Array(num_rhos) {0.0}
         var thetas = Array(num_thetas) {0.0}
         rhos[0] = -diag_len
@@ -272,15 +273,12 @@ class Processing : AppCompatActivity() {
         }
 
         var accumulator_grad: Array<Array<Int>> = Array(rhos.size) {Array(thetas.size) {0} }
-        var test = 0
+
         for (y in 0 until Height){
             for (x in 0 until Width){
                 if (dst[y][x] == 255){
                     var theta_raw = vals[y][x][1]
-                    if (test < 20) {
-                        Log.e("[INFO]", "theta raw is: $theta_raw")
-                        //test = test + 1
-                    }
+
                     var i = cos(Math.toRadians(theta_raw))
                     var j = sin(Math.toRadians(theta_raw))
                     var rho_raw = (x * i) + (y * j)
@@ -288,10 +286,7 @@ class Processing : AppCompatActivity() {
                         theta_raw = theta_raw - 180
                         rho_raw = -rho_raw
                     }
-                    if (test < 20) {
-                        Log.e("[INFO]", "theta corrected is: $theta_raw")
-                        //test = test + 1
-                    }
+
                     dst_grad[y][x] = theta_raw
                     var rhos_minus_f = mk.zeros<Double>(rhos.size)
                     for (r in 0 until rhos.size){
@@ -301,12 +296,10 @@ class Processing : AppCompatActivity() {
                     for (r in 0 until thetas.size){
                         thetas_minus_f[r] = abs(thetas[r] - theta_raw)
                     }
+
                     var rho_idx = argMin(rhos_minus_f)
                     var theta_idx = argMin(thetas_minus_f)
-                    if (test < 20) {
-                        Log.e("[INFO]", "theta index is: $theta_idx")
-                        test = test + 1
-                    }
+
                     accumulator_grad[rho_idx][theta_idx] += 1
                 }
             }
@@ -318,64 +311,10 @@ class Processing : AppCompatActivity() {
         /********************************************************************************************/
         // GRADIENT INFORMED HOUGH TRANSFORM END
         // DEBUG NUM LINES (REMOVE WHEN DONE)
-        var num_lines = 0
-        num_lines = 0
-        for (y in 0 until accumulator_grad.size){
-            for (x in 0 until accumulator_grad[0].size){
-                if (accumulator_grad[y][x] > 0){
-                    num_lines += 1
-                    accumulator_grad[y][x] = 255
-                }
-                else{
-                    accumulator_grad[y][x] = 0
-                }
-            }
-        }
-        Log.e("[INFO]", "Number of lines in accume grad is: $num_lines")
+
         // EDGE SORTING START
         /********************************************************************************************/
-        var workingBitmap: Bitmap? = createBitmap(bitmap)
-        val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
-
-
-        var canvas = Canvas(mutableBitmap)
-        var paintline = Paint()
-        paintline.strokeWidth = 1.0F
-
-        for (y in 0 until accumulator_grad.size) {
-            for (x in 0 until accumulator_grad[0].size) {
-                if (accumulator_grad[y][x] > 0){
-                    var rho = rhos[y]
-                    var theta = thetas[x]
-                    var a = cos(Math.toRadians(theta))
-                    var b = sin(Math.toRadians(theta))
-                    var x0 = (a * rho)
-                    var y0 = (b * rho)
-                    var x1 = (x0 + (diag_len * (-b))).toInt().toFloat()
-                    var y1 = (y0 + (diag_len * (a))).toInt().toFloat()
-                    var x2 = (x0 - (diag_len * (-b))).toInt().toFloat()
-                    var y2 = (y0 - (diag_len * (a))).toInt().toFloat()
-                    paintline.color = Color.GREEN
-                    canvas.drawLine(x1, y1, x2, y2, paintline)
-
-                }
-            }
-        }
-
-        var threshold = 6
-        Log.e("[STATUS]", "Starting hough transform trimming")
-        for (y in 0 until accumulator_grad.size){
-            for (x in 0 until accumulator_grad[0].size){
-                if (accumulator_grad[y][x] < threshold){
-                    accumulator_grad[y][x] = 0
-                }
-                else if (accumulator_grad[y][x] > threshold){
-                    num_lines += 1
-                }
-            }
-        }
-        Log.e("[INFO]", "Number of lines detected post threshold is: $num_lines")
-    /*
+        /*
         var workingBitmap: Bitmap? = createBitmap(bitmap)
         val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
@@ -404,6 +343,49 @@ class Processing : AppCompatActivity() {
             }
         }
         */
+        var num_lines = 0
+        var threshold = 6
+        Log.e("[STATUS]", "Starting hough transform trimming")
+        for (y in 0 until accumulator_grad.size){
+            for (x in 0 until accumulator_grad[0].size){
+                if (accumulator_grad[y][x] < threshold){
+                    accumulator_grad[y][x] = 0
+                }
+                else if (accumulator_grad[y][x] > threshold){
+                    num_lines += 1
+                }
+            }
+        }
+        Log.e("[INFO]", "Number of lines detected post threshold is: $num_lines")
+
+        var workingBitmap: Bitmap? = createBitmap(bitmap)
+        val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
+
+
+        var canvas = Canvas(mutableBitmap)
+        var paintline = Paint()
+        paintline.strokeWidth = 1.0F
+
+        for (y in 0 until accumulator_grad.size) {
+            for (x in 0 until accumulator_grad[0].size) {
+                if (accumulator_grad[y][x] > 0){
+                    var rho = rhos[y]
+                    var theta = thetas[x]
+                    var a = cos(Math.toRadians(theta))
+                    var b = sin(Math.toRadians(theta))
+                    var x0 = (a * rho)
+                    var y0 = (b * rho)
+                    var x1 = (x0 + (diag_len * (-b))).toInt().toFloat()
+                    var y1 = (y0 + (diag_len * (a))).toInt().toFloat()
+                    var x2 = (x0 - (diag_len * (-b))).toInt().toFloat()
+                    var y2 = (y0 - (diag_len * (a))).toInt().toFloat()
+                    paintline.color = Color.GREEN
+                    canvas.drawLine(x1, y1, x2, y2, paintline)
+
+                }
+            }
+        }
+
         var accumed = Array(accumulator_grad.size) { Array(accumulator_grad[0].size) {0} }
         if (num_lines > 50){
             var accumedm = dilate(accumulator_grad, 5, 5)
