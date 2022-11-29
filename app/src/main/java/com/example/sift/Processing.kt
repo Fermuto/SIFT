@@ -289,7 +289,7 @@ class Processing : AppCompatActivity() {
                         rho_raw = -rho_raw
                     }
                     if (test < 20) {
-                        Log.e("[INFO]", "theta raw is: $theta_raw")
+                        Log.e("[INFO]", "theta corrected is: $theta_raw")
                         //test = test + 1
                     }
                     dst_grad[y][x] = theta_raw
@@ -303,6 +303,10 @@ class Processing : AppCompatActivity() {
                     }
                     var rho_idx = argMin(rhos_minus_f)
                     var theta_idx = argMin(thetas_minus_f)
+                    if (test < 20) {
+                        Log.e("[INFO]", "theta index is: $theta_idx")
+                        test = test + 1
+                    }
                     accumulator_grad[rho_idx][theta_idx] += 1
                 }
             }
