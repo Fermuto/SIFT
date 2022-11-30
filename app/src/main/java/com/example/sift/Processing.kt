@@ -354,7 +354,7 @@ class Processing : AppCompatActivity() {
         }
         */
         var num_lines = 0
-        var threshold = 2
+        var threshold = 4
         Log.e("[STATUS]", "Starting hough transform trimming")
         for (y in 0 until accumulator_grad.size){
             for (x in 0 until accumulator_grad[0].size){
@@ -635,13 +635,13 @@ class Processing : AppCompatActivity() {
         /********************************************************************************************/
         // DRAW LINES V2
 
-        var start_window_s = 30
+        var start_window_s = 40
         var start_window_w = 30
-        var continue_window_s = 20
+        var continue_window_s = 40
         var continue_window_w = 30
-        var difference_threshold_s = 30
-        var continue_threshold_s = 40
-        var difference_threshold_w = 30
+        var difference_threshold_s = 50
+        var continue_threshold_s = 50
+        var difference_threshold_w = 40
         var continue_threshold_w = 110
         var difference_threshold = 0
         var continue_threshold = 0
@@ -735,6 +735,7 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
+
         Log.e("[STATUS]", "Ending draw lines")
         /********************************************************************************************/
         Log.e("[STATUS]", "Determining intercepts")
@@ -742,6 +743,8 @@ class Processing : AppCompatActivity() {
         for (j in 0 until Height){
             for (i in 0 until Width){
                 if (points_ol[j][i][0] > 1){
+                    var thing = points_ol[j][i][0]
+                    Log.e("[INFO]", "POINT at: $thing")
                     var non_zero_angle: MutableList<Double> = mutableListOf()
                     for (k in 0 until total_plotter.size){
                         if (points_ol[j][i][k+1] > 0){
