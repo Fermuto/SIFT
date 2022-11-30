@@ -188,7 +188,7 @@ class Processing : AppCompatActivity() {
         }
         Log.e("[STATUS]", "Ending bilinear interpolation for edge detection")
         Log.e("[STATUS]", "Starting Thresholded Canny Edge Detection")
-        val strong_thres = 0.25 * find_max
+        val strong_thres = 0.3 * find_max
         val weak_thres = 0.1 * find_max
         var thresholded: Array<Array<Int>> = Array(new_vals.size) {Array(new_vals[0].size) {0} }
 
@@ -240,8 +240,8 @@ class Processing : AppCompatActivity() {
         /********************************************************************************************/
         Log.e("[STATUS]", "Starting gradient informed hough transfrom")
         var dst_grad: Array<Array<Double>> = Array(dst.size) {Array(dst[0].size) {0.0} }
-        val num_rhos = 400
-        val num_thetas = 400
+        val num_rhos = 500
+        val num_thetas = 500
         val diag_len = ceil(sqrt(((Width * Width) + (Height * Height)).toDouble()))
         Log.e("[INFO]", "Diagonal length of image is: $diag_len")
         val rho_granularity = (2.0F * diag_len) / num_rhos.toFloat()
@@ -354,7 +354,7 @@ class Processing : AppCompatActivity() {
         }
         */
         var num_lines = 0
-        var threshold = 4
+        var threshold = 5
         Log.e("[STATUS]", "Starting hough transform trimming")
         for (y in 0 until accumulator_grad.size){
             for (x in 0 until accumulator_grad[0].size){
@@ -405,7 +405,7 @@ class Processing : AppCompatActivity() {
             accumed = accumulator_grad
         }
 
-        var accumed_suppressed = suppressor(accumed, 55, 55)
+        var accumed_suppressed = suppressor(accumed, 11, 11)
 
         num_lines = 0
         for (y in 0 until accumulator_grad.size){
@@ -635,14 +635,15 @@ class Processing : AppCompatActivity() {
         /********************************************************************************************/
         // DRAW LINES V2
 
-        var start_window_s = 40
-        var start_window_w = 30
+        var start_window_s = 10
+        var start_window_w = 40
         var continue_window_s = 40
-        var continue_window_w = 30
-        var difference_threshold_s = 50
-        var continue_threshold_s = 50
-        var difference_threshold_w = 40
-        var continue_threshold_w = 110
+        var continue_window_w = 40
+
+        var difference_threshold_s = 30
+        var continue_threshold_s = 60
+        var difference_threshold_w = 30
+        var continue_threshold_w = 130
         var difference_threshold = 0
         var continue_threshold = 0
         var start_window = 0
@@ -735,16 +736,26 @@ class Processing : AppCompatActivity() {
                 }
             }
         }
-
         Log.e("[STATUS]", "Ending draw lines")
+        for (j in 0 until Height){
+            for (i in 0 until Width){
+                if (points_ol[j][i][0] > 1){
+                    var non_zero_angle: MutableList<Double> = mutableListOf()
+                    for (k in 0 until total_plotter.size){
+                        if (points_ol[j][i][k+1] > 0){
+                            non_zero_angle.add(points_ol[j][i][k+1])
+                        }
+                    }
+                    Log.e("[INFO]", "non zero angles at: " + non_zero_angle)
+                }
+            }
+        }
         /********************************************************************************************/
         Log.e("[STATUS]", "Determining intercepts")
         var intercept: MutableList<Pair<Int, Int>> = mutableListOf()
         for (j in 0 until Height){
             for (i in 0 until Width){
                 if (points_ol[j][i][0] > 1){
-                    var thing = points_ol[j][i][0]
-                    Log.e("[INFO]", "POINT at: $thing")
                     var non_zero_angle: MutableList<Double> = mutableListOf()
                     for (k in 0 until total_plotter.size){
                         if (points_ol[j][i][k+1] > 0){
@@ -752,7 +763,7 @@ class Processing : AppCompatActivity() {
                         }
                     }
                     if ((non_zero_angle.size >  1) and (non_zero_angle.size < 3)){
-                        if ((percent_difference(non_zero_angle[0], non_zero_angle[1]) > 50.0) and (percent_difference(non_zero_angle[0], non_zero_angle[1]) < 190.0)){
+                        if ((percent_difference(non_zero_angle[0], non_zero_angle[1]) > 50.0) and (percent_difference(non_zero_angle[0], non_zero_angle[1]) < 200.0)){
                             intercept.add(Pair(i, j))
                         }
                     }
