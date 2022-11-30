@@ -30,11 +30,21 @@ class Processing : AppCompatActivity() {
         setContentView(viewBinding.root)
 //        setContentView(R.layout.activity_processing)
 
+
         val extras = intent.extras
         Height = extras!!.getInt("Height")
         Width = extras.getInt("Width")
-
-        var bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
+        var bitmap = createBitmap(Width, Height, conf)
+        if (extras!!.getInt("Mode") == 0){
+            bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
+        }
+        else if (extras!!.getInt("Mode") == 1){
+            var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import)
+            bitmap = createScaledBitmap(imported, Width, Height, true)
+        }
+        else{
+            throw Exception("Invalid Mode Code")
+        }
 
 
         /********************************************************************************************/
@@ -351,7 +361,7 @@ class Processing : AppCompatActivity() {
 //        }
 
         var num_lines = 0
-        var threshold = 3
+        var threshold = 6
         Log.e("[STATUS]", "Starting hough transform trimming")
         for (y in 0 until accumulator_grad.size){
             for (x in 0 until accumulator_grad[0].size){

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.util.Size
@@ -25,7 +24,8 @@ import java.util.concurrent.Executors
 
 
 @OptIn(androidx.camera.core.ExperimentalGetImage::class)
-
+val scaleHeight = 480
+val scaleWidth = 640
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        viewBinding.processingPrompt.visibility = View.GONE
+        viewBinding.processingPrompt.visibility = View.VISIBLE
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
+        viewBinding.imageImportButton.setOnClickListener { directImport() }
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
@@ -112,8 +113,9 @@ class MainActivity : AppCompatActivity() {
                         var buffer: ByteBuffer = capture.planes.get(0).buffer
                         val bytes = ByteArray(buffer.capacity())
                         buffer.get(bytes)
+//                        val bitmapMid = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
                         val bitmapMid = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
-                        val bitmapImage = Bitmap.createScaledBitmap(bitmapMid, 640, 480, true)
+                        val bitmapImage = Bitmap.createScaledBitmap(bitmapMid, scaleWidth, scaleHeight, true)
 
 //                        val stream = ByteArrayOutputStream()
 //                        bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, stream)
@@ -121,9 +123,10 @@ class MainActivity : AppCompatActivity() {
 
                         val bitmapname = createImageFromBitmap(bitmapImage)
 
+                        i.putExtra("Mode", 0)
                         i.putExtra("Capture", bitmapname);
-                        i.putExtra("Height", bitmapImage.height)
-                        i.putExtra("Width", bitmapImage.width)
+                        i.putExtra("Height", scaleHeight)
+                        i.putExtra("Width", scaleWidth)
 
 //                        var j = 0
 //                        var k = 0
@@ -159,7 +162,17 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+    private fun directImport(){
+        val i = Intent(this@MainActivity, Processing::class.java)
 
+        i.putExtra("Mode", 1)
+        i.putExtra("Height", scaleHeight)
+        i.putExtra("Width", scaleWidth)
+
+        Toast.makeText(baseContext, "Importing...", Toast.LENGTH_SHORT).show()
+
+        startActivity(i)
+    }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
