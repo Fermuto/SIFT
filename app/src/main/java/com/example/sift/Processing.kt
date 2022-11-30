@@ -273,7 +273,7 @@ class Processing : AppCompatActivity() {
         }
 
         var accumulator_grad: Array<Array<Int>> = Array(rhos.size) {Array(thetas.size) {0} }
-
+        var test = 0
         for (y in 0 until Height){
             for (x in 0 until Width){
                 if (dst[y][x] == 255){
@@ -282,11 +282,16 @@ class Processing : AppCompatActivity() {
                     var i = cos(Math.toRadians(theta_raw))
                     var j = sin(Math.toRadians(theta_raw))
                     var rho_raw = (x * i) + (y * j)
+                    if (test < 20) {
+                        Log.e("[INFO]", "Inital rho: " + rho_raw + " inital theta: " + theta_raw)
+                    }
                     if (theta_raw > 180){
                         theta_raw = theta_raw - 180
                         rho_raw = -rho_raw
                     }
-
+                    if (test < 20) {
+                        Log.e("[INFO]", "Updated rho: " + rho_raw + " Updated theta: " + theta_raw)
+                    }
                     dst_grad[y][x] = theta_raw
                     var rhos_minus_f = mk.zeros<Double>(rhos.size)
                     for (r in 0 until rhos.size){
@@ -300,6 +305,11 @@ class Processing : AppCompatActivity() {
                     var rho_idx = argMin(rhos_minus_f)
                     var theta_idx = argMin(thetas_minus_f)
 
+                    if (test < 20) {
+                        Log.e("[INFO]", "Index rho: " + rho_idx + " Index theta: " + theta_idx)
+                        Log.e("[INFO]", "Value rho: " + rhos[rho_idx] + " Index theta: " + thetas[theta_idx])
+                        test = test + 1
+                    }
                     accumulator_grad[rho_idx][theta_idx] += 1
                 }
             }
@@ -344,7 +354,7 @@ class Processing : AppCompatActivity() {
         }
         */
         var num_lines = 0
-        var threshold = 6
+        var threshold = 2
         Log.e("[STATUS]", "Starting hough transform trimming")
         for (y in 0 until accumulator_grad.size){
             for (x in 0 until accumulator_grad[0].size){
@@ -357,7 +367,7 @@ class Processing : AppCompatActivity() {
             }
         }
         Log.e("[INFO]", "Number of lines detected post threshold is: $num_lines")
-
+        /*
         var workingBitmap: Bitmap? = createBitmap(bitmap)
         val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
@@ -384,7 +394,7 @@ class Processing : AppCompatActivity() {
 
                 }
             }
-        }
+        }*/
 
         var accumed = Array(accumulator_grad.size) { Array(accumulator_grad[0].size) {0} }
         if (num_lines > 50){
@@ -430,7 +440,7 @@ class Processing : AppCompatActivity() {
         }
         Log.e("[INFO]", "Number of lines detected post trimming is: $num_lines")
         Log.e("[STATUS]", "Ending hough transform trimming")
-        /*
+/*
         var workingBitmap: Bitmap? = createBitmap(bitmap)
         val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
@@ -443,21 +453,25 @@ class Processing : AppCompatActivity() {
                 if (accumed_suppressed[y][x] > 0){
                     var rho = rhos[y]
                     var theta = thetas[x]
+
                     var a = cos(Math.toRadians(theta))
                     var b = sin(Math.toRadians(theta))
+
                     var x0 = (a * rho)
                     var y0 = (b * rho)
+                    Log.e("[INFO]", "Start X: " + x0 + "Start Y: " + y0)
+
                     var x1 = (x0 + (diag_len * (-b))).toInt().toFloat()
                     var y1 = (y0 + (diag_len * (a))).toInt().toFloat()
                     var x2 = (x0 - (diag_len * (-b))).toInt().toFloat()
                     var y2 = (y0 - (diag_len * (a))).toInt().toFloat()
+
                     paintline.color = Color.GREEN
                     canvas.drawLine(x1, y1, x2, y2, paintline)
-                    Log.e("[INFO]", "M1 RED Line drawn at: ($x1, $y1) to ($x2, $y2)")
                 }
             }
-        }*/
-        /*
+        } */
+
         Log.e("[STATUS]", "Starting DBSCAN")
         var points = points(accumed_suppressed)
 
@@ -550,11 +564,11 @@ class Processing : AppCompatActivity() {
         }
         Log.e("[INFO]", "Number of clusters is: $num_clusters")
         Log.e("[STATUS]", "Ending DBSCAN")
-         */
+
         /********************************************************************************************/
         // DRAW LINES V1
         Log.e("[STATUS]", "Starting to draw lines")
-        /*
+
         var workingBitmap: Bitmap? = createBitmap(bitmap)
         val mutableBitmap = workingBitmap!!.copy(Config.ARGB_8888, true)
 
@@ -563,7 +577,9 @@ class Processing : AppCompatActivity() {
         paintline.strokeWidth = 2.0F
 
         var num_solo = 0
+        /*
         for (x in 0 until cluster_center.size){
+
             var rho = rhos[cluster_center[x][0]]
             var theta = thetas[cluster_center[x][1]]
             var a = cos(Math.toRadians(theta))
@@ -577,12 +593,12 @@ class Processing : AppCompatActivity() {
             paintline.color = Color.RED
             canvas.drawLine(x1, y1, x2, y2, paintline)
             Log.e("[INFO]", "M1 RED Line drawn at: ($x1, $y1) to ($x2, $y2)")
-        }
+        }*/
 
         for (j in 0 until points.size){
             if (cluster[j][3] == -1){
                 num_solo += 1
-                var rho = rhos[cluster[j][0]]
+               /* var rho = rhos[cluster[j][0]]
                 var theta = thetas[cluster[j][1]]
                 var a = cos(Math.toRadians(theta))
                 var b = sin(Math.toRadians(theta))
@@ -594,7 +610,7 @@ class Processing : AppCompatActivity() {
                 var y2 = (y0 - (1000 * (a))).toInt().toFloat()
                 paintline.color = Color.GREEN
                 canvas.drawLine(x1, y1, x2, y2, paintline)
-                Log.e("[INFO]", "M1 GRN Line drawn at: ($x1, $y1) to ($x2, $y2)")
+                Log.e("[INFO]", "M1 GRN Line drawn at: ($x1, $y1) to ($x2, $y2)")*/
             }
         }
         Log.e("[INFO]", "Number of solo points is: $num_solo")
@@ -633,6 +649,7 @@ class Processing : AppCompatActivity() {
         var continue_window = 0
 
         var points_ol: Array<Array<Array<Double>>> = Array(Height) { Array(Width) { Array(cluster.size + 1) {0.0} } }
+        Log.e("[INFO]", "Total plotter size: $total_plotter.size")
         for (j in 0 until total_plotter.size){
             if (j < num_solo){
                 difference_threshold = difference_threshold_s
@@ -752,7 +769,7 @@ class Processing : AppCompatActivity() {
             Log.e("[INFO]", "Circle set at: ($x, $y)")
         }
 
-        */
+
         /********************************************************************************************/
         // EDGE SORTING END
         /********************************************************************************************/
