@@ -4,6 +4,7 @@ import android.graphics.*
 import android.graphics.Bitmap.*
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.sift.databinding.ActivityProcessingBinding
 import org.jetbrains.kotlinx.multik.api.mk
@@ -836,18 +837,21 @@ class Processing : AppCompatActivity() {
                     display.setPixel(((dst.size - 1) - x), y, Color.argb(255, dst[x][y].toInt(), dst[x][y].toInt(), dst[x][y].toInt()))
                 }
             }
+            Toast.makeText(baseContext, "Switching view to: DST", Toast.LENGTH_SHORT).show()
             viewBinding.productDisplay.setImageBitmap(display)
         }
         else if (toggleIdx == 1){
             toggleIdx = 2
+            Toast.makeText(baseContext, "Switching view to: Lines / Intercepts", Toast.LENGTH_SHORT).show()
             viewBinding.productDisplay.setImageBitmap(mutableBitmap)
         }
         else if (toggleIdx == 2){
             toggleIdx = 3
+            Toast.makeText(baseContext, "Switching view to: Bounding Box", Toast.LENGTH_SHORT).show()
             viewBinding.productDisplay.setImageBitmap(mutableBitmap2)
         }
         else{
-            throw Exception("Invalid Toggle Cycle")
+            Toast.makeText(baseContext, "Invalid Toggle Idx!", Toast.LENGTH_SHORT).show()
         }
 
     }
