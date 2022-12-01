@@ -3,4 +3,11 @@
     <string name="take_photo">Take Photo</string>
     <string name="import_image">Import Image</string>
     <string name="processing_prompt">Start Processing Image?</string>
+    <string name="toggle_view">Toggle View</string>
+
+    <string name="selection_1">#1</string>
+    <string name="selection_2">#2</string>
+    <string name="selection_3">#3</string>
+    <string name="selection_4">#4</string>
+
 </resources>

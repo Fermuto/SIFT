@@ -21,7 +21,7 @@ class Processing : AppCompatActivity() {
     var conf = Config.ARGB_8888
     var Width: Int = 0
     var Height: Int = 0
-
+    var toggleIdx = 3
     private lateinit var viewBinding: ActivityProcessingBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,11 +35,28 @@ class Processing : AppCompatActivity() {
         Height = extras!!.getInt("Height")
         Width = extras.getInt("Width")
         var bitmap = createBitmap(Width, Height, conf)
+        var imported = createBitmap(Width, Height, conf)
+        var import_idx = extras!!.getInt("Idx")
         if (extras!!.getInt("Mode") == 0){
             bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
         }
         else if (extras!!.getInt("Mode") == 1){
-            var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_1)
+            if (import_idx == 1){
+                var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_1)
+            }
+            else if (import_idx == 2){
+                var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_2)
+            }
+            else if (import_idx == 3){
+                var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_3)
+            }
+            else if (import_idx == 4){
+                var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_4)
+            }
+            else{
+                throw Exception("Invalid Import Idx")
+            }
+
             bitmap = createScaledBitmap(imported, Width, Height, true)
         }
         else{
@@ -799,19 +816,42 @@ class Processing : AppCompatActivity() {
         // EDGE SORTING END
         /********************************************************************************************/
 
-//        val display = createBitmap(dst.size, dst[0].size, Config.ARGB_8888)
-//        for (x in 0 until dst.size){
-//            for (y in 0 until dst[0].size){
-//                display.setPixel(((dst.size - 1) - x), y, Color.argb(255, dst[x][y].toInt(), dst[x][y].toInt(), dst[x][y].toInt()))
-//            }
-//        }
+        //put your bounding box code here, if possible. Make it write to mutableBitmap2 please
+
 
         viewBinding.productDisplay.setImageBitmap(mutableBitmap)
+        viewBinding.toggleView.setOnClickListener { toggleView(dst, mutableBitmap, mutableBitmap2) }
     }
 
     /********************************************************************************************/
     // HELPER FUNCTIONS
     /********************************************************************************************/
+    private fun toggleView(dst: Array<Array<Int>>, mutableBitmap: Bitmap, mutableBitmap2: Bitmap){
+        //toggleIdx: 1 is dst, 2 is lines, 3 is bounding box. Imageview will show 3 (final product) by default
+        if (toggleIdx == 3){
+            toggleIdx == 1
+            var display = createBitmap(dst.size, dst[0].size, Config.ARGB_8888)
+            for (x in 0 until dst.size){
+                for (y in 0 until dst[0].size){
+                    display.setPixel(((dst.size - 1) - x), y, Color.argb(255, dst[x][y].toInt(), dst[x][y].toInt(), dst[x][y].toInt()))
+                }
+            }
+            viewBinding.productDisplay.setImageBitmap(display)
+        }
+        else if (toggleIdx == 1){
+            toggleIdx = 2
+            viewBinding.productDisplay.setImageBitmap(mutableBitmap)
+        }
+        else if (toggleIdx == 2){
+            toggleIdx = 3
+            viewBinding.productDisplay.setImageBitmap(mutableBitmap2)
+        }
+        else{
+            throw Exception("Invalid Toggle Cycle")
+        }
+
+    }
+
 
     fun start_cluster(j: Int, cluster: Array<Array<Int>>, point_mat: MutableList<MutableList<Int>>, current_cluster: Int){
         cluster[j][3] = current_cluster

@@ -36,12 +36,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
 
+    var import_idx = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        viewBinding.processingPrompt.visibility = View.VISIBLE
+        viewBinding.processingPrompt.visibility = View.GONE
 
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -54,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.imageImportButton.setOnClickListener { directImport() }
+        viewBinding.selection.setOnClickListener { changeSelection() }
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
@@ -168,10 +171,20 @@ class MainActivity : AppCompatActivity() {
         i.putExtra("Mode", 1)
         i.putExtra("Height", scaleHeight)
         i.putExtra("Width", scaleWidth)
+        i.putExtra("Idx", import_idx)
 
         Toast.makeText(baseContext, "Importing...", Toast.LENGTH_SHORT).show()
 
         startActivity(i)
+    }
+
+    private fun changeSelection(){
+        if (import_idx == 4){
+            import_idx = 1
+        }
+        else{
+            import_idx += 1
+        }
     }
 
     private fun startCamera() {
