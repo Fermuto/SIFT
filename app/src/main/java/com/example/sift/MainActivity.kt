@@ -181,9 +181,11 @@ class MainActivity : AppCompatActivity() {
     private fun changeSelection(){
         if (import_idx == 4){
             import_idx = 1
+            viewBinding.selection.setText("#1")
         }
         else{
             import_idx += 1
+            viewBinding.selection.setText("#$import_idx")
         }
     }
 
