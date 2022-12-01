@@ -39,7 +39,7 @@ class Processing : AppCompatActivity() {
             bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
         }
         else if (extras!!.getInt("Mode") == 1){
-            var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import)
+            var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_1)
             bitmap = createScaledBitmap(imported, Width, Height, true)
         }
         else{
@@ -198,8 +198,8 @@ class Processing : AppCompatActivity() {
         }
         Log.e("[STATUS]", "Ending bilinear interpolation for edge detection")
         Log.e("[STATUS]", "Starting Thresholded Canny Edge Detection")
-        val strong_thres = 0.20 * find_max
-        val weak_thres = 0.05 * find_max
+        val strong_thres = 0.4 * find_max
+        val weak_thres = 0.25 * find_max
         var thresholded: Array<Array<Int>> = Array(new_vals.size) {Array(new_vals[0].size) {0} }
 
         for (y in 0 until new_vals.size){
@@ -475,7 +475,8 @@ class Processing : AppCompatActivity() {
                 distance[j][i] = sqrt(((points[j].first - points[i].first).toDouble().pow(2)) + ((points[j].second - points[i].second).toDouble().pow(2)))
             }
         }
-
+        val points_size = points.size
+        Log.e("[INFO]", "Points.size: $points_size")
         var cluster = Array(points.size) {Array(6) {0} }
         for (i in 0 until points.size){
             cluster[i][0] = points[i].first
@@ -636,14 +637,14 @@ class Processing : AppCompatActivity() {
 
 
         var start_window_s = 10
-        var start_window_w = 40
+        var start_window_w = 30
         var continue_window_s = 40
         var continue_window_w = 40
 
-        var difference_threshold_s = 30
+        var difference_threshold_s = 15
         var continue_threshold_s = 60
-        var difference_threshold_w = 30
-        var continue_threshold_w = 130
+        var difference_threshold_w = 5
+        var continue_threshold_w = 50
         var difference_threshold = 0
         var continue_threshold = 0
         var start_window = 0
@@ -651,95 +652,118 @@ class Processing : AppCompatActivity() {
 
         var cluster_size = cluster.size
         Log.e("[INFO]", "Cluster.size: $cluster_size")
+        val plotter_size = total_plotter.size
+        //var max_ol = 20
+        var points_ol: Array<Array<Array<Float>>> = Array(Height) { Array(Width) { Array((plotter_size + 1)) {0.0F} } }
 
-        var points_ol: Array<Array<Array<Float>>> = Array(Height) { Array(Width) { Array(cluster.size + 1) {0.0F} } }
-        Log.e("[INFO]", "Total plotter size: $total_plotter.size")
+        Log.e("[INFO]", "Total plotter size: $plotter_size")
         for (j in 0 until total_plotter.size){
             if (j < num_solo){
-                difference_threshold = difference_threshold_s
-                continue_threshold = continue_threshold_s
-                start_window = start_window_s
-                continue_window = continue_window_s
-            }
-            else if (j >= num_solo){
-                difference_threshold = difference_threshold_w
-                continue_threshold = continue_threshold_w
-                start_window = start_window_w
-                continue_window = continue_window_w
-            }
-            var rho = rhos[total_plotter[j][0]]
-            var theta = thetas[total_plotter[j][1]]
+                       difference_threshold = difference_threshold_s
+                       continue_threshold = continue_threshold_s
+                       start_window = start_window_s
+                       continue_window = continue_window_s
+                   }
+                   else if (j >= num_solo){
+                       difference_threshold = difference_threshold_w
+                       continue_threshold = continue_threshold_w
+                       start_window = start_window_w
+                       continue_window = continue_window_w
+                   }
+                   var rho = rhos[total_plotter[j][0]]
+                   var theta = thetas[total_plotter[j][1]]
 
-            if (theta == 0.0){
-                theta = 0.001
-            }
-            var a = cos(Math.toRadians(theta))
-            var b = sin(Math.toRadians(theta))
+                   if (theta == 0.0){
+                       theta = 0.001
+                   }
+                    Log.e("[INFO]", "Theta is: $theta")
+                    if (theta > 175 || theta < 5){
+                        continue_threshold = 200
+                        difference_threshold = 200
+                    }
+                   var a = cos(Math.toRadians(theta))
+                   var b = sin(Math.toRadians(theta))
 
-            var x0 = (a * rho)
-            var y0 = (b * rho)
+                   var x0 = (a * rho)
+                   var y0 = (b * rho)
 
-            var drawing = false
+                   var drawing = false
 
-            for (i in 0 until (3 * diag_len.toInt())){
-                var still_draw = false
-                var x = (x0 + (i - diag_len) * (-b)).toInt()
-                var y = (y0 + (i - diag_len) * (a)).toInt()
-                if ((y > 0) and (y < Height) and (x > 0) and (x < Width)){
-                    if (!drawing){
-                        for (k in 0 until start_window){
-                            var loc_y = y - (start_window / 2).toInt() + k
-                            for (m in 0 until x){
-                                var loc_x = x - (start_window / 2).toInt() + m
-                                if ((loc_y > 0) and (loc_y < Height)){
-                                    if ((loc_x > 0) and (loc_x < Width)){
-                                        if (dst[loc_y][loc_x] == 255){
-                                            if (percent_difference(dst_grad[loc_y][loc_x], theta) < difference_threshold){
-                                               drawing = true
-                                               still_draw = true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (drawing){
-                        for (k in 0 until continue_window){
-                            var loc_y = y - (continue_window / 2).toInt() + k
-                            for (m in 0 until x){
-                                var loc_x = x - (continue_window / 2).toInt() + m
-                                if ((loc_y > 0) and (loc_y < Height)){
-                                    if ((loc_x > 0) and (loc_x < Width)){
-                                        if (dst[loc_y][loc_x] == 255){
-                                            if (percent_difference(dst_grad[loc_y][loc_x], theta) < continue_threshold){
-                                                still_draw = true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if (!still_draw){
-                    drawing = false
-                }
-                if (drawing){
-                    if (j < num_solo){
-                        mutableBitmap.setPixel(x, y, Color.rgb(255, 0, 0));
-                        Log.e("[INFO]", "M2 RED pixel set at: ($x, $y)")
-                    }
-                    if (j >= num_solo){
-                        mutableBitmap.setPixel(x, y, Color.rgb(0, 255, 0));
-                        Log.e("[INFO]", "M2 GRN pixel set at: ($x, $y)")
-                    }
-                    points_ol[y][x][0] += 1.0F
-                    points_ol[y][x][j + 1] += theta.toFloat()
-                }
-            }
-        }
-        Log.e("[STATUS]", "Ending draw lines")
+                   for (i in 0 until (3 * diag_len.toInt())){
+                       var still_draw = false
+                       var x = (x0 + (i - diag_len) * (-b)).toInt()
+                       var y = (y0 + (i - diag_len) * (a)).toInt()
+                       if ((y > 0) and (y < Height) and (x > 0) and (x < Width)){
+                           if (!drawing){
+                               for (k in 0 until start_window){
+                                   var loc_y = y - (start_window / 2).toInt() + k
+                                   for (m in 0 until x){
+                                       var loc_x = x - (start_window / 2).toInt() + m
+                                       if ((loc_y > 0) and (loc_y < Height)){
+                                           if ((loc_x > 0) and (loc_x < Width)){
+                                               if (dst[loc_y][loc_x] == 255){
+                                                   if (percent_difference(dst_grad[loc_y][loc_x], theta) < difference_threshold){
+                                                      drawing = true
+                                                      still_draw = true
+                                                   }
+                                               }
+                                           }
+                                       }
+                                   }
+                               }
+                           }
+                           else if (drawing){
+                               for (k in 0 until continue_window){
+                                   var loc_y = y - (continue_window / 2).toInt() + k
+                                   for (m in 0 until x){
+                                       var loc_x = x - (continue_window / 2).toInt() + m
+                                       if ((loc_y > 0) and (loc_y < Height)){
+                                           if ((loc_x > 0) and (loc_x < Width)){
+                                               if (dst[loc_y][loc_x] == 255){
+                                                   if (percent_difference(dst_grad[loc_y][loc_x], theta) < continue_threshold){
+                                                       still_draw = true
+                                                   }
+                                               }
+                                           }
+                                       }
+                                   }
+                               }
+                           }
+                       }
+                       if (!still_draw){
+                           drawing = false
+                       }
+                       if (drawing){
+                           if (j < num_solo){
+                               mutableBitmap.setPixel(x, y, Color.rgb(255, 0, 0));
+                               //Log.e("[INFO]", "M2 RED pixel set at: ($x, $y)")
+                           }
+                           if (j >= num_solo){
+                               mutableBitmap.setPixel(x, y, Color.rgb(0, 255, 0));
+                               //Log.e("[INFO]", "M2 GRN pixel set at: ($x, $y)")
+                           }
+                           points_ol[y][x][0] += 1.0F
+                           points_ol[y][x][j + 1] += theta.toFloat()
+                       }
+                   }
+               }
+               Log.e("[STATUS]", "Ending draw lines")
+               for (j in 0 until Height){
+                   for (i in 0 until Width){
+                       if (points_ol[j][i][0] > 1){
+                           var non_zero_angle: MutableList<Double> = mutableListOf()
+                           for (k in 0 until total_plotter.size){
+                               if (points_ol[j][i][k+1] > 0){
+                                   non_zero_angle.add(points_ol[j][i][k+1].toDouble())
+                               }
+                           }
+                           Log.e("[INFO]", "non zero angles at: " + non_zero_angle)
+                       }
+                   }
+               }
+        /********************************************************************************************/
+        Log.e("[STATUS]", "Determining intercepts")
+        var intercept: MutableList<Pair<Int, Int>> = mutableListOf()
         for (j in 0 until Height){
             for (i in 0 until Width){
                 if (points_ol[j][i][0] > 1){
@@ -749,42 +773,26 @@ class Processing : AppCompatActivity() {
                             non_zero_angle.add(points_ol[j][i][k+1].toDouble())
                         }
                     }
-                    Log.e("[INFO]", "non zero angles at: " + non_zero_angle)
+                    if ((non_zero_angle.size >  1) and (non_zero_angle.size < 3)){
+                        if ((percent_difference(non_zero_angle[0], non_zero_angle[1]) > 50.0) and (percent_difference(non_zero_angle[0], non_zero_angle[1]) < 200.0)){
+                            intercept.add(Pair(i, j))
+                        }
+                    }
                 }
             }
         }
-//        /********************************************************************************************/
-//        Log.e("[STATUS]", "Determining intercepts")
-//        var intercept: MutableList<Pair<Int, Int>> = mutableListOf()
-//        for (j in 0 until Height){
-//            for (i in 0 until Width){
-//                if (points_ol[j][i][0] > 1){
-//                    var non_zero_angle: MutableList<Double> = mutableListOf()
-//                    for (k in 0 until total_plotter.size){
-//                        if (points_ol[j][i][k+1] > 0){
-//                            non_zero_angle.add(points_ol[j][i][k+1].toDouble())
-//                        }
-//                    }
-//                    if ((non_zero_angle.size >  1) and (non_zero_angle.size < 3)){
-//                        if ((percent_difference(non_zero_angle[0], non_zero_angle[1]) > 50.0) and (percent_difference(non_zero_angle[0], non_zero_angle[1]) < 200.0)){
-//                            intercept.add(Pair(i, j))
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        Log.e("[INFO]", "Intercepts at: $intercept")
-//        Log.e("[STATUS]", "Drawing Circles")
-//        var paintcircle = Paint()
-//        paintcircle.strokeWidth = 2.0F
-//        paintcircle.color = Color.RED
-//        val radius = 5.0F
-//        for (i in 0 until intercept.size){
-//            var y = intercept[i].first.toFloat()
-//            var x = intercept[i].second.toFloat()
-//            canvas.drawCircle(y, x, radius, paintcircle)
-//            Log.e("[INFO]", "Circle set at: ($y, $x)")
-//        }
+        Log.e("[INFO]", "Intercepts at: $intercept")
+        Log.e("[STATUS]", "Drawing Circles")
+        var paintcircle = Paint()
+        paintcircle.strokeWidth = 2.0F
+        paintcircle.color = Color.RED
+        val radius = 5.0F
+        for (i in 0 until intercept.size){
+            var y = intercept[i].first.toFloat()
+            var x = intercept[i].second.toFloat()
+            canvas.drawCircle(y, x, radius, paintcircle)
+            Log.e("[INFO]", "Circle set at: ($y, $x)")
+        }
 
 
         /********************************************************************************************/
