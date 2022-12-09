@@ -22,7 +22,7 @@ class Processing : AppCompatActivity() {
     var conf = Config.ARGB_8888
     var Width: Int = 0
     var Height: Int = 0
-    var toggleIdx = 3
+    var toggleIdx = 2
     private lateinit var viewBinding: ActivityProcessingBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,26 +38,32 @@ class Processing : AppCompatActivity() {
         var bitmap = createBitmap(Width, Height, conf)
         var imported = createBitmap(Width, Height, conf)
         var import_idx = extras!!.getInt("Idx")
+
         if (extras!!.getInt("Mode") == 0){
             bitmap = BitmapFactory.decodeStream(this@Processing.openFileInput("myImage"))
         }
         else if (extras!!.getInt("Mode") == 1){
+            Log.e("Idx: ", "$import_idx")
             if (import_idx == 1){
                 var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_1)
+                Log.e("Imported: ", "1")
             }
             else if (import_idx == 2){
                 var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_2)
+                Log.e("Imported: ", "2")
             }
             else if (import_idx == 3){
                 var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_3)
+                Log.e("Imported: ", "3")
             }
             else if (import_idx == 4){
                 var imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_4)
+                Log.e("Imported: ", "4")
             }
             else{
                 throw Exception("Invalid Import Idx")
             }
-
+            imported = BitmapFactory.decodeResource(resources, R.drawable.bitmap_import_2)
             bitmap = createScaledBitmap(imported, Width, Height, true)
         }
         else{
@@ -821,15 +827,15 @@ class Processing : AppCompatActivity() {
 
 
         viewBinding.productDisplay.setImageBitmap(mutableBitmap)
-        viewBinding.toggleView.setOnClickListener { toggleView(dst, mutableBitmap, mutableBitmap2) }
+        viewBinding.toggleView.setOnClickListener { toggleView(dst, mutableBitmap) }
     }
 
     /********************************************************************************************/
     // HELPER FUNCTIONS
     /********************************************************************************************/
-    private fun toggleView(dst: Array<Array<Int>>, mutableBitmap: Bitmap, mutableBitmap2: Bitmap){
+    fun toggleView(dst: Array<Array<Int>>, mutableBitmap: Bitmap){
         //toggleIdx: 1 is dst, 2 is lines, 3 is bounding box. Imageview will show 3 (final product) by default
-        if (toggleIdx == 3){
+        if (toggleIdx == 2){
             toggleIdx == 1
             var display = createBitmap(dst.size, dst[0].size, Config.ARGB_8888)
             for (x in 0 until dst.size){
@@ -845,11 +851,11 @@ class Processing : AppCompatActivity() {
             Toast.makeText(baseContext, "Switching view to: Lines / Intercepts", Toast.LENGTH_SHORT).show()
             viewBinding.productDisplay.setImageBitmap(mutableBitmap)
         }
-        else if (toggleIdx == 2){
-            toggleIdx = 3
-            Toast.makeText(baseContext, "Switching view to: Bounding Box", Toast.LENGTH_SHORT).show()
-            viewBinding.productDisplay.setImageBitmap(mutableBitmap2)
-        }
+//        else if (toggleIdx == 2){
+//            toggleIdx = 3
+//            Toast.makeText(baseContext, "Switching view to: Bounding Box", Toast.LENGTH_SHORT).show()
+//            viewBinding.productDisplay.setImageBitmap(mutableBitmap2)
+//        }
         else{
             Toast.makeText(baseContext, "Invalid Toggle Idx!", Toast.LENGTH_SHORT).show()
         }

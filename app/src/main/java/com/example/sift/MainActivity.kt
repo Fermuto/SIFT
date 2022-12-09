@@ -26,6 +26,7 @@ import java.util.concurrent.Executors
 @OptIn(androidx.camera.core.ExperimentalGetImage::class)
 val scaleHeight = 480
 val scaleWidth = 640
+var import_idx = 1
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
 
-    var import_idx = 1
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
